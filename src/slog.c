@@ -181,16 +181,6 @@ static uint32_t slog_get_tid()
 #endif
 }
 
-/*function to get size of the file.*/
-long int get_file_size(const char *file_name)
-{
-    struct stat st; /*declare stat variable*/
-    if(stat(file_name,&st)==0)
-        return (st.st_size);
-    else
-        return -1;
-}
-
 static void slog_display_output(char *pStr, uint8_t nNewLine)
 {
     if (g_slog.slogConfig.nToScreen)
@@ -201,10 +191,13 @@ static void slog_display_output(char *pStr, uint8_t nNewLine)
 
     if (!g_slog.slogConfig.nToFile) return;
     // const SLogDate *pDate = &g_slog.slogDate;
-    char sFilePath[SLOG_PATH_MAX*2];
+    char sFilePath[SLOG_PATH_MAX];
     snprintf(sFilePath, sizeof(sFilePath), "%s", g_slog.slogConfig.sFileName);
-    if (get_file_size(sFilePath) > LOG_FILE_SIZE) {
-        char bFilePath[SLOG_PATH_MAX*2 + 4]; 
+    struct stat st; /*declare stat variable*/
+    long file_sz = stat(sFilePath, &st)==0 ? st.st_size :0; 
+    if (file_sz > LOG_FILE_SIZE) {
+        printf("file size = %ld, move to bak\n", file_sz); 
+        char bFilePath[SLOG_PATH_MAX + 4]; 
         snprintf(bFilePath, sizeof(bFilePath), "%s.bak", sFilePath); 
         if (rename(sFilePath, bFilePath) != 0) {
             printf("failed to mv log file to bak"); 
