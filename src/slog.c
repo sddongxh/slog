@@ -202,9 +202,7 @@ static void slog_display_output(char *pStr, uint8_t nNewLine)
     if (!g_slog.slogConfig.nToFile) return;
     // const SLogDate *pDate = &g_slog.slogDate;
     char sFilePath[SLOG_PATH_MAX*2];
-    snprintf(sFilePath, sizeof(sFilePath), "%s/%s.log", 
-            g_slog.slogConfig.sFilePath[0] != 0 ? g_slog.slogConfig.sFilePath : ".", 
-            g_slog.slogConfig.sFileName[0] != 0 ? g_slog.slogConfig.sFileName : "slog");
+    snprintf(sFilePath, sizeof(sFilePath), "%s", g_slog.slogConfig.sFileName);
     if (get_file_size(sFilePath) > LOG_FILE_SIZE) {
         char bFilePath[SLOG_PATH_MAX*2 + 4]; 
         snprintf(bFilePath, sizeof(bFilePath), "%s.bak", sFilePath); 
