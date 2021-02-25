@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <time.h>
 #include "slog.h"
+#include <sys/stat.h>
 
 #if !defined(DARWIN) && !defined(WIN32)
 #include <syscall.h>
@@ -60,6 +61,8 @@ typedef struct SLogContext_ {
 } SLogContext;
 
 static SLogContext g_slog;
+
+#define LOG_FILE_SIZE 1024*1024*5
 
 static void slog_sync_init(SLogContext *pSlog)
 {
@@ -178,6 +181,16 @@ static uint32_t slog_get_tid()
 #endif
 }
 
+/*function to get size of the file.*/
+long int get_file_size(const char *file_name)
+{
+    struct stat st; /*declare stat variable*/
+    if(stat(file_name,&st)==0)
+        return (st.st_size);
+    else
+        return -1;
+}
+
 static void slog_display_output(char *pStr, uint8_t nNewLine)
 {
     if (g_slog.slogConfig.nToScreen)
@@ -187,14 +200,19 @@ static void slog_display_output(char *pStr, uint8_t nNewLine)
     }
 
     if (!g_slog.slogConfig.nToFile) return;
-    const SLogDate *pDate = &g_slog.slogDate;
-
-    char sFilePath[SLOG_PATH_MAX + SLOG_NAME_MAX + SLOG_DATE_MAX];
-    snprintf(sFilePath, sizeof(sFilePath), "%s/%s-%04d-%02d-%02d.log", 
-        g_slog.slogConfig.sFilePath[0] != 0 ? g_slog.slogConfig.sFilePath : ".", 
-        g_slog.slogConfig.sFileName[0] != 0 ? g_slog.slogConfig.sFileName : "slog", 
-        pDate->nYear, pDate->nMonth, pDate->nDay);
-
+    // const SLogDate *pDate = &g_slog.slogDate;
+    char sFilePath[SLOG_PATH_MAX*2];
+    snprintf(sFilePath, sizeof(sFilePath), "%s/%s.log", 
+            g_slog.slogConfig.sFilePath[0] != 0 ? g_slog.slogConfig.sFilePath : ".", 
+            g_slog.slogConfig.sFileName[0] != 0 ? g_slog.slogConfig.sFileName : "slog");
+    if (get_file_size(sFilePath) > LOG_FILE_SIZE) {
+        char bFilePath[SLOG_PATH_MAX*2 + 4]; 
+        snprintf(bFilePath, sizeof(bFilePath), "%s.bak", sFilePath); 
+        if (rename(sFilePath, bFilePath) != 0) {
+            printf("failed to mv log file to bak"); 
+            return; 
+        }
+    }    
     FILE *pFile = fopen(sFilePath, "a");
     if (pFile == NULL) return;
 
